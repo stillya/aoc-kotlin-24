@@ -1,6 +1,7 @@
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.system.measureTimeMillis
 
 fun main() {
 
@@ -18,33 +19,24 @@ fun main() {
 		}
 	}
 
-	fun generatePermutationsRecursive(
+	fun generateOpsPerms(
 		current: List<Operator>,
 		size: Int,
 		ops: List<Operator>,
-		permutations: MutableList<List<Operator>>
-	) {
-		if (current.size == size) {
-			permutations.add(current)
-			return
+	): Sequence<List<Operator>> = sequence {
+		suspend fun SequenceScope<List<Operator>>.genPerm(
+			current: List<Operator>,
+		) {
+			if (current.size == size) {
+				yield(current)
+				return
+			}
+			for (operator in ops) {
+				genPerm(current + operator)
+			}
 		}
-		for (operator in ops) {
-			generatePermutationsRecursive(
-				current + operator,
-				size,
-				ops,
-				permutations
-			)
-		}
-	}
 
-	fun generateOperatorPermutations(
-		size: Int,
-		ops: List<Operator>
-	): List<List<Operator>> {
-		val permutations = mutableListOf<List<Operator>>()
-		generatePermutationsRecursive(listOf(), size, ops, permutations)
-		return permutations
+		genPerm(current)
 	}
 
 	fun checkEquation(input: List<String>, ops: List<Operator>): Long {
@@ -59,21 +51,24 @@ fun main() {
 
 		for (equation in equations) {
 			executor.submit {
-				val found =
-					generateOperatorPermutations(equation.values.size - 1, ops).find {
-						val values = equation.values.toMutableList()
+				val iter =
+					generateOpsPerms(listOf(), equation.values.size - 1, ops).iterator()
 
-						var result = values.removeFirst()
-						for (i in values.indices) {
-							val operator = it[i]
-							val value = values[i]
-							result = operator.apply(result, value)
-						}
-						result == equation.result
+				while (iter.hasNext()) {
+					val operators = iter.next()
+					val values = equation.values.toMutableList()
+
+					var result = values.removeFirst()
+					for (i in values.indices) {
+						val operator = operators[i]
+						val value = values[i]
+						result = operator.apply(result, value)
 					}
 
-				if (found != null) {
-					totalCalibResult.addAndGet(equation.result)
+					if (result == equation.result) {
+						totalCalibResult.addAndGet(equation.result)
+						break
+					}
 				}
 
 				latch.countDown()
@@ -103,43 +98,47 @@ fun main() {
 		return checkEquation(input, ops)
 	}
 
-	check(
-		part1(
-			listOf(
-				"190: 10 19",
-				"3267: 81 40 27",
-				"83: 17 5",
-				"156: 15 6",
-				"7290: 6 8 6 15",
-				"161011: 16 10 13",
-				"192: 17 8 14",
-				"21037: 9 7 18 13",
-				"292: 11 6 16 20",
-			)
-		).also {
-			it.println()
-		} == 3749L
-	)
+	measureTimeMillis {
+		check(
+			part1(
+				listOf(
+					"190: 10 19",
+					"3267: 81 40 27",
+					"83: 17 5",
+					"156: 15 6",
+					"7290: 6 8 6 15",
+					"161011: 16 10 13",
+					"192: 17 8 14",
+					"21037: 9 7 18 13",
+					"292: 11 6 16 20",
+				)
+			).also {
+				it.println()
+			} == 3749L
+		)
 
-	check(
-		part2(
-			listOf(
-				"190: 10 19",
-				"3267: 81 40 27",
-				"83: 17 5",
-				"156: 15 6",
-				"7290: 6 8 6 15",
-				"161011: 16 10 13",
-				"192: 17 8 14",
-				"21037: 9 7 18 13",
-				"292: 11 6 16 20",
-			)
-		).also {
-			it.println()
-		} == 11387L
-	)
+		check(
+			part2(
+				listOf(
+					"190: 10 19",
+					"3267: 81 40 27",
+					"83: 17 5",
+					"156: 15 6",
+					"7290: 6 8 6 15",
+					"161011: 16 10 13",
+					"192: 17 8 14",
+					"21037: 9 7 18 13",
+					"292: 11 6 16 20",
+				)
+			).also {
+				it.println()
+			} == 11387L
+		)
 
-	val input = readInput("Day07")
-	part1(input).println()
-	part2(input).println()
+		val input = readInput("Day07")
+		part1(input).println()
+		part2(input).println()
+	}.let {
+		println("Calculated in $it ms")
+	}
 }
