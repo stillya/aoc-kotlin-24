@@ -7,14 +7,14 @@ fun main() {
 		input.forEach rit@{ report ->
 			val levels = report.split(" ").map { it.toInt() }
 			var lastValue = levels.first()
-			var direction: Direction? = null
+			var direction: SequenceDirection? = null
 			levels.subList(1, levels.size).forEach { level ->
 				val diff = level - lastValue
 				lastValue = level
 				val localDirection = if (diff > 0) {
-					Direction.INCREASING
+					SequenceDirection.INCREASING
 				} else if (diff < 0) {
-					Direction.DECREASING
+					SequenceDirection.DECREASING
 				} else {
 					return@rit
 				}
@@ -38,7 +38,7 @@ fun main() {
 		input.forEach rit@{ report ->
 			val levels = report.split(" ").map { it.toInt() }
 			var lastValue = levels.first()
-			var direction: Direction? = null
+			var direction: SequenceDirection? = null
 			val remainingLevels = levels.subList(1, levels.size)
 			var errors = 0
 
@@ -46,8 +46,8 @@ fun main() {
 				val level = remainingLevels[idx - errors]
 				val diff = level - lastValue
 				val localDirection = when {
-					diff > 0 -> Direction.INCREASING
-					diff < 0 -> Direction.DECREASING
+					diff > 0 -> SequenceDirection.INCREASING
+					diff < 0 -> SequenceDirection.DECREASING
 					else -> {
 						// fail-fast
 						if (errors > 1) {
@@ -72,9 +72,9 @@ fun main() {
 							lastValue = levels[idx - errors]
 							if ((idx - errors) == 0) {
 								direction = if (level - lastValue > 0) {
-									Direction.INCREASING
+									SequenceDirection.INCREASING
 								} else {
-									Direction.DECREASING
+									SequenceDirection.DECREASING
 								}
 							}
 						}
@@ -110,7 +110,7 @@ fun main() {
 }
 
 
-enum class Direction {
+enum class SequenceDirection {
 	INCREASING,
 	DECREASING
 }
